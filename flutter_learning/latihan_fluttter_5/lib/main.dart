@@ -84,11 +84,16 @@ class FikriScreen extends StatelessWidget {
                 ),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 14),
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
                   child: Row(
                     children: [
-                      const Icon(Icons.local_drink,
-                          color: Colors.blueAccent, size: 28),
+                      const Icon(
+                        Icons.local_drink,
+                        color: Colors.blueAccent,
+                        size: 28,
+                      ),
                       const SizedBox(width: 16),
                       Text(
                         item.name,
