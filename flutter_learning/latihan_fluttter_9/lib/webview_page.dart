@@ -24,7 +24,7 @@ class _WebViewPageState extends State<WebViewPage> {
           },
         ),
       )
-      ..loadRequest(Uri.parse('https://fikri-ramadhan-portofolio.vercel.app/'));
+      ..loadRequest(Uri.parse('https://narasi.tv//'));
   }
 
   @override
@@ -37,10 +37,7 @@ class _WebViewPageState extends State<WebViewPage> {
       body: Stack(
         children: [
           WebViewWidget(controller: _controller),
-          if (isLoading)
-            const Center(
-              child: CircularProgressIndicator(),
-            ),
+          if (isLoading) const Center(child: CircularProgressIndicator()),
         ],
       ),
     );
