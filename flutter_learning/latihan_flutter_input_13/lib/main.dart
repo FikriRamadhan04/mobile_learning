@@ -27,7 +27,7 @@ class _HomePageState extends State<HomePage> {
   final _formKey = GlobalKey<FormState>();
 
   String _nama = "";
-  String _email = "";
+  String _nim = "";
 
   @override
   Widget build(BuildContext context) {
@@ -57,14 +57,14 @@ class _HomePageState extends State<HomePage> {
 
               TextFormField(
                 decoration: const InputDecoration(
-                  labelText: 'Email',
+                  labelText: 'NIM',
                   border: OutlineInputBorder(),
                 ),
                 validator: (value) {
-                  if (value!.isEmpty) return 'Email tidak boleh kosong';
+                  if (value!.isEmpty) return 'NIM tidak boleh kosong';
                   return null;
                 },
-                onSaved: (value) => _email = value!,
+                onSaved: (value) => _nim = value!,
               ),
               const SizedBox(height: 16),
 
@@ -72,7 +72,21 @@ class _HomePageState extends State<HomePage> {
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
                     _formKey.currentState!.save();
-                    print("Nama: $_nama, Email: $_email");
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        backgroundColor: Colors.black87,
+                        content: Text(
+                          "$_nim - $_nama Berhasil Ditambahkan",
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                        duration: const Duration(seconds: 3),
+                      ),
+                    );
+
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const DataPage()),
+                    );
                   }
                 },
                 child: const Text('Simpan'),
@@ -81,6 +95,21 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class DataPage extends StatelessWidget {
+  const DataPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Data Mahasiswa"),
+        backgroundColor: Colors.pink,
+      ),
+      body: Container(),
     );
   }
 }
