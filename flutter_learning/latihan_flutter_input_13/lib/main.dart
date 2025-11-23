@@ -1,106 +1,65 @@
-import 'package:flutter/material.dart';
+// main.dart
 
+import 'package:flutter/material.dart';
+import 'package:latihan_flutter_13/mahasiswa.dart';
+import 'package:latihan_flutter_13/db_helper.dart';
+// import 'package:latihan_flutter_13/input_mahasiswa_page.dart'; // Ganti Placeholder dengan ini
+
+// ⭐️ 1. FUNGSI UTAMA YANG HILANG ⭐️
 void main() {
+  // Pastikan inisialisasi Firebase jika Anda menggunakan Firestore
+  // WidgetsFlutterBinding.ensureInitialized();
+  // await Firebase.initializeApp();
   runApp(const MyApp());
 }
 
+// ⭐️ 2. WIDGET PEMBUNGKUS UTAMA ⭐️
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: const HomePage(),
+      title: 'Aplikasi Data Mahasiswa',
+      theme: ThemeData(
+        primarySwatch: Colors.pink,
+      ),
+      // Set DataListView sebagai halaman utama (home)
+      home: const DataListView(),
     );
   }
 }
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+// ⭐️ 3. KODE DataListView ANDA (DITEMPATKAN DI SINI) ⭐️
+
+class DataListView extends StatefulWidget {
+  const DataListView({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<DataListView> createState() => _DataListViewState();
 }
 
-class _HomePageState extends State<HomePage> {
-  final _formKey = GlobalKey<FormState>();
+class _DataListViewState extends State<DataListView> {
+  Key _refreshKey = UniqueKey();
 
-  String _nama = "";
-  String _nim = "";
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('p13 Input - M.Fikri Ramadhan'),
-        backgroundColor: Colors.pink,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              TextFormField(
-                decoration: const InputDecoration(
-                  labelText: 'Nama',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value!.isEmpty) return 'Nama tidak boleh kosong';
-                  return null;
-                },
-                onSaved: (value) => _nama = value!,
-              ),
-              const SizedBox(height: 16),
-
-              TextFormField(
-                decoration: const InputDecoration(
-                  labelText: 'NIM',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value!.isEmpty) return 'NIM tidak boleh kosong';
-                  return null;
-                },
-                onSaved: (value) => _nim = value!,
-              ),
-              const SizedBox(height: 16),
-
-              ElevatedButton(
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    _formKey.currentState!.save();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        backgroundColor: Colors.black87,
-                        content: Text(
-                          "$_nim - $_nama Berhasil Ditambahkan",
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                        duration: const Duration(seconds: 3),
-                      ),
-                    );
-
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const DataPage()),
-                    );
-                  }
-                },
-                child: const Text('Simpan'),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+  void _refreshData() {
+    setState(() {
+      _refreshKey = UniqueKey();
+    });
   }
-}
 
-class DataPage extends StatelessWidget {
-  const DataPage({super.key});
+  void _navigateToAddData() async {
+    final result = await Navigator.push(
+      context,
+      // 💡 Ganti Placeholder dengan widget input Anda:
+      MaterialPageRoute(builder: (context) => const Placeholder()), 
+      // Contoh: MaterialPageRoute(builder: (context) => const InputMahasiswaPage()), 
+    );
+    
+    if (result == true) { 
+      _refreshData();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -108,8 +67,78 @@ class DataPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text("Data Mahasiswa"),
         backgroundColor: Colors.pink,
+        actions: [
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _refreshData),
+        ],
       ),
-      body: Container(),
+      body: FutureBuilder<List<Mahasiswa>>(
+        key: _refreshKey,
+        future: DatabaseHelper().getAllMahasiswa(),
+        builder: (context, snapshot) {
+          
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(
+              child: Text(
+                'Gagal memuat data: ${snapshot.error}',
+                textAlign: TextAlign.center,
+              ),
+            );
+          }
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(child: Text('Tidak ada data mahasiswa.'));
+          }
+          
+          final List<Mahasiswa> mahasiswaList = snapshot.data!;
+          return ListView.builder(
+            itemCount: mahasiswaList.length,
+            itemBuilder: (context, index) {
+              final mahasiswa = mahasiswaList[index];
+              
+              return Dismissible(
+                key: Key(mahasiswa.nim),
+                background: Container(
+                  color: Colors.red,
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 20.0),
+                  child: const Icon(Icons.delete, color: Colors.white),
+                ),
+                direction: DismissDirection.endToStart,
+                onDismissed: (direction) async {
+                  await DatabaseHelper().deleteMahasiswa(mahasiswa.nim);
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Mahasiswa ${mahasiswa.nama} dihapus.'),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                  _refreshData();
+                },
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: Colors.pink.shade100,
+                    child: Text(
+                      '${index + 1}',
+                      style: const TextStyle(color: Colors.pink),
+                    ),
+                  ),
+                  title: Text(mahasiswa.nama),
+                  subtitle: Text('NIM: ${mahasiswa.nim}'),
+                  trailing: const Icon(Icons.chevron_right),
+                ),
+              );
+            },
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _navigateToAddData,
+        backgroundColor: Colors.pink,
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
     );
   }
 }
