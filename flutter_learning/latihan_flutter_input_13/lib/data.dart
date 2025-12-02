@@ -1,106 +1,77 @@
 import 'package:flutter/material.dart';
-import 'package:latihan_flutter_13/mahasiswa.dart';
-import 'package:latihan_flutter_13/db_helper.dart';
+import 'mahasiswa.dart';
+import 'db_helper.dart';
 
-class Data extends StatefulWidget {
-  const Data({super.key});
+class DataMahasiswaPage extends StatefulWidget {
+  const DataMahasiswaPage({super.key});
 
   @override
-  State<Data> createState() => _DataState();
+  State<DataMahasiswaPage> createState() => _DataMahasiswaPageState();
 }
 
-class _DataState extends State<Data> {
-  List<Mahasiswa> _mahasiswaList = [];
-  bool _isLoading = true;
-  String? _error; 
+class _DataMahasiswaPageState extends State<DataMahasiswaPage> {
+  final DbHelper dbHelper = DbHelper();
+  late Future<List<Mahasiswa>> _mahasiswaListFuture;
 
   @override
   void initState() {
     super.initState();
-    loadData();
+    _refreshMahasiswaList();
   }
 
-  Future<void> loadData() async {
-    try {
-     
-      final mhs = await DatabaseHelper().getAllMahasiswa();
-
-    
-      setState(() {
-        _mahasiswaList = mhs;
-        _isLoading = false;
-        _error = null; 
-      });
-    } catch (e) {
-     
-      print('Error loading data: $e');
-      setState(() {
-        _isLoading = false;
-        _error = 'Gagal memuat data dari database.';
-      });
-    }
+  void _refreshMahasiswaList() {
+    setState(() {
+      _mahasiswaListFuture = dbHelper.getMahasiswaList();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    Widget bodyContent;
-
-    if (_isLoading) {
-      bodyContent = const Center(child: CircularProgressIndicator());
-    } else if (_error != null) {
-     
-      bodyContent = Center(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Text(
-            'Error: $_error',
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.red),
-          ),
-        ),
-      );
-    } else if (_mahasiswaList.isEmpty) {
-   
-      bodyContent = const Center(child: Text('Tidak ada data mahasiswa.'));
-    } else {
-   
-      bodyContent = ListView.builder(
-        itemCount: _mahasiswaList.length,
-        itemBuilder: (context, index) {
-          final mahasiswa = _mahasiswaList[index];
-          return ListTile(
-            leading: CircleAvatar(
-              backgroundColor: Colors.pink.shade100,
-              child: Text(
-                '${index + 1}',
-                style: const TextStyle(color: Colors.pink),
-              ),
-            ),
-            title: Text(mahasiswa.nama),
-            subtitle: Text('NIM: ${mahasiswa.nim}'),
-          );
-        },
-      );
-    }
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Data Mahasiswa'),
-        backgroundColor: Colors.pink,
-        actions: [
-         
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              setState(() {
-                _isLoading = true; 
-              });
-              loadData();
-            },
-          ),
-        ],
+        backgroundColor: Colors.blue,
       ),
-      body: bodyContent,
+      body: FutureBuilder<List<Mahasiswa>>(
+        future: _mahasiswaListFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(child: Text('Tidak ada data mahasiswa.'));
+          } else {
+            final mahasiswaList = snapshot.data!;
+            return ListView.builder(
+              itemCount: mahasiswaList.length,
+              itemBuilder: (context, index) {
+                final mhs = mahasiswaList[index];
+                return Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 8.0,
+                    horizontal: 16.0,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        mhs.nama,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(mhs.nim, style: const TextStyle(fontSize: 16)),
+                      const Divider(),
+                    ],
+                  ),
+                );
+              },
+            );
+          }
+        },
+      ),
     );
   }
 }

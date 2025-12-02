@@ -1,30 +1,37 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:latihan_flutter_13/main.dart';
+import 'package:latihan_flutter_input_13/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
+  testWidgets('InputMahasiswaPage renders all form elements',
+      (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp());
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    await tester.pumpAndSettle();
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    expect(find.text('P13 Input - Andri Hermawan'), findsOneWidget,
+        reason: 'Should find the title of the input page.');
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.widgetWithText(TextFormField, 'NIM'), findsOneWidget,
+        reason: 'Should find the input field with label NIM.');
+
+    expect(find.widgetWithText(TextFormField, 'NAMA'), findsOneWidget,
+        reason: 'Should find the input field with label NAMA.');
+
+    expect(find.widgetWithText(ElevatedButton, 'Simpan'), findsOneWidget,
+        reason: 'Should find the Save/Simpan button.');
+
+    expect(find.byIcon(Icons.list), findsOneWidget,
+        reason:
+            'Should find the Floating Action Button for data list navigation.');
+
+    await tester.enterText(
+        find.widgetWithText(TextFormField, 'NIM'), '231091750053');
+    expect(find.text('231091750053'), findsOneWidget);
+
+    await tester.enterText(
+        find.widgetWithText(TextFormField, 'NAMA'), 'Andri Hermawan');
+    expect(find.text('Andri Hermawan'), findsOneWidget);
   });
 }

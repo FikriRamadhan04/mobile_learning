@@ -1,76 +1,66 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-import 'mahasiswa.dart'; 
+import 'mahasiswa.dart';
 
-class DatabaseHelper {
-
+class DbHelper {
+  static final DbHelper _instance = DbHelper._internal();
   static Database? _database;
 
-  static final DatabaseHelper _instance = DatabaseHelper._internal();
+  final String tableName = 'mahasiswa';
+  final String columnId = 'id';
+  final String columnNim = 'nim';
+  final String columnNama = 'nama';
 
-  DatabaseHelper._internal();
-
-  factory DatabaseHelper() => _instance;
+  DbHelper._internal();
+  factory DbHelper() => _instance;
 
   Future<Database> get database async {
     if (_database != null) {
       return _database!;
     }
-    _database = await _initDatabase();
+    _database = await _initDb();
     return _database!;
   }
 
-  Future<Database> _initDatabase() async {
-    final databasePath = await getDatabasesPath();
-    final path = join(databasePath, 'mhs.db');
+  Future<Database> _initDb() async {
+    String path = await getDatabasesPath();
+    String databasePath = join(path, 'mahasiswa_db.db');
+
     return await openDatabase(
-      path,
+      databasePath,
       version: 1,
-      onCreate: (db, version) {
-        return db.execute('''
-          CREATE TABLE mahasiswa(
-            nim TEXT PRIMARY KEY, 
-            nama TEXT
+      onCreate: (db, version) async {
+        await db.execute('''
+          CREATE TABLE $tableName (
+            $columnId INTEGER PRIMARY KEY AUTOINCREMENT,
+            $columnNim TEXT UNIQUE,
+            $columnNama TEXT
           )
-          ''');
+        ''');
       },
     );
   }
 
-  Future<void> insertMahasiswa(Mahasiswa mahasiswa) async {
+  Future<int> insertMahasiswa(Mahasiswa mahasiswa) async {
     final db = await database;
-    await db.insert(
-      'mahasiswa',
+    return await db.insert(
+      tableName,
       mahasiswa.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
 
-
-  Future<List<Mahasiswa>> getAllMahasiswa() async {
+  Future<List<Mahasiswa>> getMahasiswaList() async {
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query('mahasiswa');
+    final List<Map<String, dynamic>> maps = await db.query(tableName);
+
     return List.generate(maps.length, (i) {
       return Mahasiswa.fromMap(maps[i]);
     });
   }
 
-  Future<int> deleteMahasiswa(String nim) async {
+  Future<int> deleteMahasiswa(int id) async {
     final db = await database;
-    return await db.delete(
-      'mahasiswa',
-      where: 'nim = ?',
-      whereArgs: [nim],
-    );
-  }
-  
-  Future<int> updateMahasiswa(Mahasiswa mahasiswa) async {
-    final db = await database;
-    return await db.update(
-      'mahasiswa',
-      mahasiswa.toMap(),
-      where: 'nim = ?',
-      whereArgs: [mahasiswa.nim],
-    );
+    return await db.delete(tableName, where: '$columnId = ?', whereArgs: [id]);
   }
 }

@@ -1,143 +1,139 @@
-// main.dart
+// lib/main.dart
 
 import 'package:flutter/material.dart';
-import 'package:latihan_flutter_13/mahasiswa.dart';
-import 'package:latihan_flutter_13/db_helper.dart';
-// import 'package:latihan_flutter_13/input_mahasiswa_page.dart'; // Ganti Placeholder dengan ini
+import 'mahasiswa.dart';
+import 'db_helper.dart';
+import 'data.dart';
 
-// ⭐️ 1. FUNGSI UTAMA YANG HILANG ⭐️
 void main() {
-  // Pastikan inisialisasi Firebase jika Anda menggunakan Firestore
-  // WidgetsFlutterBinding.ensureInitialized();
-  // await Firebase.initializeApp();
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
 
-// ⭐️ 2. WIDGET PEMBUNGKUS UTAMA ⭐️
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Aplikasi Data Mahasiswa',
+      title: 'Flutter SQLite CRUD',
       theme: ThemeData(
-        primarySwatch: Colors.pink,
+        primarySwatch: Colors.blue,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      // Set DataListView sebagai halaman utama (home)
-      home: const DataListView(),
+      home: const InputMahasiswaPage(),
+      routes: {'/data': (context) => const DataMahasiswaPage()},
     );
   }
 }
 
-// ⭐️ 3. KODE DataListView ANDA (DITEMPATKAN DI SINI) ⭐️
-
-class DataListView extends StatefulWidget {
-  const DataListView({super.key});
+class InputMahasiswaPage extends StatefulWidget {
+  const InputMahasiswaPage({super.key});
 
   @override
-  State<DataListView> createState() => _DataListViewState();
+  State<InputMahasiswaPage> createState() => _InputMahasiswaPageState();
 }
 
-class _DataListViewState extends State<DataListView> {
-  Key _refreshKey = UniqueKey();
+class _InputMahasiswaPageState extends State<InputMahasiswaPage> {
+  final TextEditingController nimController = TextEditingController();
+  final TextEditingController namaController = TextEditingController();
+  final DbHelper dbHelper = DbHelper();
+  final _formKey = GlobalKey<FormState>();
 
-  void _refreshData() {
-    setState(() {
-      _refreshKey = UniqueKey();
-    });
+  Future<void> _saveMahasiswa() async {
+    if (_formKey.currentState!.validate()) {
+      final newMahasiswa = Mahasiswa(
+        nim: nimController.text,
+        nama: namaController.text,
+      );
+
+      try {
+        await dbHelper.insertMahasiswa(newMahasiswa);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Data Mahasiswa berhasil disimpan!')),
+          );
+        }
+
+        nimController.clear();
+        namaController.clear();
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Gagal menyimpan data: $e')));
+        }
+      }
+    }
   }
 
-  void _navigateToAddData() async {
-    final result = await Navigator.push(
-      context,
-      // 💡 Ganti Placeholder dengan widget input Anda:
-      MaterialPageRoute(builder: (context) => const Placeholder()), 
-      // Contoh: MaterialPageRoute(builder: (context) => const InputMahasiswaPage()), 
-    );
-    
-    if (result == true) { 
-      _refreshData();
-    }
+  @override
+  void dispose() {
+    nimController.dispose();
+    namaController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Data Mahasiswa"),
-        backgroundColor: Colors.pink,
-        actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _refreshData),
-        ],
+        title: const Text('M.Fikri ramadhan'),
+        backgroundColor: Colors.blue,
       ),
-      body: FutureBuilder<List<Mahasiswa>>(
-        key: _refreshKey,
-        future: DatabaseHelper().getAllMahasiswa(),
-        builder: (context, snapshot) {
-          
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(
-              child: Text(
-                'Gagal memuat data: ${snapshot.error}',
-                textAlign: TextAlign.center,
-              ),
-            );
-          }
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('Tidak ada data mahasiswa.'));
-          }
-          
-          final List<Mahasiswa> mahasiswaList = snapshot.data!;
-          return ListView.builder(
-            itemCount: mahasiswaList.length,
-            itemBuilder: (context, index) {
-              final mahasiswa = mahasiswaList[index];
-              
-              return Dismissible(
-                key: Key(mahasiswa.nim),
-                background: Container(
-                  color: Colors.red,
-                  alignment: Alignment.centerRight,
-                  padding: const EdgeInsets.only(right: 20.0),
-                  child: const Icon(Icons.delete, color: Colors.white),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              TextFormField(
+                controller: nimController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'NIM',
+                  hintText: 'Masukkan NIM',
                 ),
-                direction: DismissDirection.endToStart,
-                onDismissed: (direction) async {
-                  await DatabaseHelper().deleteMahasiswa(mahasiswa.nim);
-
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Mahasiswa ${mahasiswa.nama} dihapus.'),
-                      duration: const Duration(seconds: 2),
-                    ),
-                  );
-                  _refreshData();
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'NIM tidak boleh kosong';
+                  }
+                  return null;
                 },
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: Colors.pink.shade100,
-                    child: Text(
-                      '${index + 1}',
-                      style: const TextStyle(color: Colors.pink),
-                    ),
-                  ),
-                  title: Text(mahasiswa.nama),
-                  subtitle: Text('NIM: ${mahasiswa.nim}'),
-                  trailing: const Icon(Icons.chevron_right),
+              ),
+              const SizedBox(height: 20),
+              TextFormField(
+                controller: namaController,
+                decoration: const InputDecoration(
+                  labelText: 'NAMA',
+                  hintText: 'Masukkan Nama',
                 ),
-              );
-            },
-          );
-        },
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Nama tidak boleh kosong';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 40),
+              ElevatedButton(
+                onPressed: _saveMahasiswa,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                ),
+                child: const Text('Simpan'),
+              ),
+            ],
+          ),
+        ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _navigateToAddData,
-        backgroundColor: Colors.pink,
-        child: const Icon(Icons.add, color: Colors.white),
+        onPressed: () {
+          Navigator.pushNamed(context, '/data');
+        },
+        child: const Icon(Icons.list),
       ),
     );
   }
