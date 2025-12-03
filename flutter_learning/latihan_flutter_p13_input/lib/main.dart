@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:latihan_flutter_p13_input/mahasiswa.dart';
 import 'data.dart';
+import 'db_helper.dart'; // Ganti dengan path yang benar
 
 void main() {
   runApp(const MaterialApp(home: MyApp()));
@@ -58,11 +60,12 @@ class _MyAppState extends State<MyApp> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
+        onPressed: () async {
           if (_formKey.currentState!.validate()) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('$nim - $nama Berhasil ditambahkan')),
-            );
+            //disini perintah save
+            final mahasiswa = Mahasiswa(nim: nim, nama: nama);
+            await DatabaseHelper().insertMahasiswa(mahasiswa);
+
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const Data()),

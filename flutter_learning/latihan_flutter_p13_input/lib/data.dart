@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:latihan_flutter_p13_input/db_helper.dart';
+import 'package:latihan_flutter_p13_input/mahasiswa.dart';
 
 class Data extends StatefulWidget {
   const Data({super.key});
@@ -8,6 +10,21 @@ class Data extends StatefulWidget {
 }
 
 class _DataState extends State<Data> {
+  List<Mahasiswa> data_mhs = [];
+
+  @override
+  void initState() {
+    super.initState();
+    loadData();
+  }
+
+  Future<void> loadData() async {
+    final mhs = await DatabaseHelper().getAllMahasiswa();
+    setState(() {
+      data_mhs = mhs;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -23,8 +40,16 @@ class _DataState extends State<Data> {
             },
           ),
         ),
-        body: Center(),
-      ), // 3. The closing parenthesis for Scaffold was missing.
+        body: ListView.builder(
+          itemCount: data_mhs.length,
+          itemBuilder: (context, index) {
+            return ListTile(
+              title: Text(data_mhs[index].nama),
+              subtitle: Text(data_mhs[index].nim),
+            );
+          },
+        ),
+      ),
     );
   }
 }
